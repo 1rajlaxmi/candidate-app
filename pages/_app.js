@@ -29,7 +29,10 @@ export default function Home() {
       formDataToSend.append(key, formData[key])
     );
 
-    const res = await fetch("/api/upload", { method: "POST", body: formDataToSend });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/upload`, {
+      method: "POST",
+      body: formDataToSend,
+    });
     const data = await res.json();
     setResponse(data);
     setLoading(false);
