@@ -9,7 +9,7 @@ dotenv.config();
 const upload = multer({ storage: multer.memoryStorage() });
 export const config = { api: { bodyParser: false } };
 
-// ✅ Function to generate 768-dimensional embeddings
+//  Function to generate 768-dimensional embeddings
 async function generateEmbeddings(text) {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: "text-embedding-004" }); // 🔹 FIXED MODEL NAME
@@ -17,15 +17,15 @@ async function generateEmbeddings(text) {
   try {
     console.log("🔹 Generating embeddings...");
     const embeddingResponse = await model.embedContent({
-      model: "text-embedding-004", // ✅ Explicitly specify model
-      content: { parts: [{ text }] }, // ✅ Fix API format
+      model: "text-embedding-004", //  Explicitly specify model
+      content: { parts: [{ text }] }, //  Fix API format
     });
 
     if (!embeddingResponse?.embedding?.values) {
       throw new Error("Embedding response missing values.");
     }
 
-    console.log("✅ Embeddings generated successfully!");
+    console.log(" Embeddings generated successfully!");
     return embeddingResponse.embedding.values; // Returns 768-dimension array
   } catch (error) {
     console.error("Embedding Error:", error);
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ✅ Handle file upload
+    //  Handle file upload
     const fileBuffer = await new Promise((resolve, reject) => {
       upload.single("resume")(req, res, (err) => {
         if (err) return reject(new Error("File upload error"));
@@ -48,23 +48,23 @@ export default async function handler(req, res) {
       });
     });
 
-    // ✅ Parse PDF text
+    //  Parse PDF text
     const text = await pdfParse(fileBuffer).then((data) => data.text);
     if (!text) throw new Error("Failed to extract text from PDF.");
     
     const candidateProfile = { text, ...req.body };
 
-    // ✅ Generate 768-dimensional vector embeddings
+    //  Generate 768-dimensional vector embeddings
     const vectorEmbeddings = await generateEmbeddings(text);
     if (vectorEmbeddings.length !== 768) {
       throw new Error("Generated embeddings do not match Pinecone index dimension.");
     }
 
-    // ✅ Initialize Pinecone Client
+    //  Initialize Pinecone Client
     const pinecone = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
     const index = pinecone.index(process.env.PINECONE_INDEX_NAME);
 
-    // ✅ Upsert Candidate Data in Pinecone
+    //  Upsert Candidate Data in Pinecone
     await index.upsert([
       {
         id: req.body.email,
@@ -72,7 +72,7 @@ export default async function handler(req, res) {
       },
     ]);
 
-    // ✅ AI-powered Evaluation (Google Gemini API)
+    //  AI-powered Evaluation (Google Gemini API)
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
@@ -80,7 +80,7 @@ export default async function handler(req, res) {
       contents: [{ role: "user", parts: [{ text: `Evaluate this candidate:\n${text}` }] }],
     });
 
-    // ✅ Extract AI response safely
+    //  Extract AI response safely
     const evaluation = aiResponse?.response?.candidates?.[0]?.content?.parts?.[0]?.text || "No evaluation received.";
 
     res.status(200).json({ success: true, profile: candidateProfile, evaluation });
